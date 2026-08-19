@@ -1,7 +1,7 @@
 # 🛡️ VeloAdmin — Outils d'administration pour réseau Velocity
 
 **VeloAdmin** est une suite d'outils d'administration pensée pour les réseaux
-Minecraft propulsés par **Velocity** (proxy) avec des serveurs **Paper 1.21.x**
+Minecraft propulsés par **Velocity 4.x** (proxy) avec des serveurs **Paper 1.21.x**
 en backend. Elle regroupe en un seul plugin les fonctionnalités essentielles de
 modération : téléportation entre serveurs, invisibilité (vanish), signalements
 joueurs et bannissements temporaires — le tout centralisé au niveau du proxy.
@@ -107,9 +107,18 @@ directement embarqué dans le JAR.
 
 ---
 
-## 🆕 Nouveautés — v1.0.0
+## 🆕 Nouveautés
 
-Première version publique de VeloAdmin ! 🎉
+### v1.1.0 — Compatibilité Velocity 4.x ⬆️
+
+- ⬆️ Migration de l'API Velocity **3.3.0 → 4.1.0-SNAPSHOT** : le plugin est
+  désormais compatible avec les proxies **Velocity 4.0.x** et plus récents.
+- 🔧 Correction du build : ajout du dépôt de snapshots PaperMC et déclaration
+  explicite du processeur d'annotations Velocity 4.x (séparé depuis JDK 23+).
+- 🛠️ Le build nécessite désormais **JDK 25** pour compiler (le bytecode du
+  plugin reste compatible Java 17).
+
+### v1.0.0 — Première version publique 🎉
 
 - 🧭 Menu de téléportation inter-serveurs `/tpgui` (et `/tpto` en direct)
 - 👻 Vanish réseau `/vanish`, appliqué réellement en jeu via le bridge Paper
@@ -122,7 +131,8 @@ Première version publique de VeloAdmin ! 🎉
 
 ## 🔧 Compiler depuis les sources
 
-Prérequis : **Java 17+** et **Maven**.
+Prérequis : **JDK 25** (requis par le processeur d'annotations Velocity 4.x)
+et **Maven**.
 
 ```bash
 git clone https://github.com/herocraftlol/Admintools.git

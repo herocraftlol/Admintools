@@ -1,0 +1,11 @@
+name: VeloAdminBridge
+version: '1.0.0'
+main: fr.veloadmin.bridge.VeloAdminBridgePlugin
+api-version: '1.21'
+author: herocraftlol
+description: Bridge cote serveur pour VeloAdmin (vanish + teleportation reelle)
+
+permissions:
+  veloadmin.vanish.see:
+    description: Peut voir les joueurs en vanish
+    default: op

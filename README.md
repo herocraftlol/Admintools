@@ -109,6 +109,18 @@ directement embarqué dans le JAR.
 
 ## 🆕 Nouveautés
 
+### v1.2.0 — Build corrigé & artefacts publiés 📦
+
+- 🔧 **Chaîne de compilation corrigée** : le processeur d'annotations
+  Velocity 4.x génère désormais correctement le `velocity-plugin.json`
+  embarqué dans le JAR — indispensable pour que le proxy reconnaisse et
+  charge le plugin au démarrage.
+- 🔢 **Numéro de version harmonisé** (`1.2.0`) partout : `pom.xml`
+  (parent + modules), `plugin.yml` du bridge et annotation `@Plugin`.
+- 📦 **JAR prêts à l'emploi** : `VeloAdmin.jar` et `VeloAdminBridge.jar`
+  sont compilés et publiés directement dans la release, avec le driver
+  SQLite déjà intégré — aucune compilation requise de votre côté.
+
 ### v1.1.0 — Compatibilité Velocity 4.x ⬆️
 
 - ⬆️ Migration de l'API Velocity **3.3.0 → 4.1.0-SNAPSHOT** : le plugin est

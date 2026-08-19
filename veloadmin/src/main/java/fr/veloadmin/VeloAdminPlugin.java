@@ -24,7 +24,7 @@ import java.nio.file.Path;
 @Plugin(
         id = "veloadmin",
         name = "VeloAdmin",
-        version = "1.1.0",
+        version = "1.2.0",
         description = "GUI teleport, vanish, /report et /tempban multi-serveurs",
         authors = {"herocraftlol"}
 )

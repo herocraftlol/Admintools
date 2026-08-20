@@ -2,14 +2,24 @@ package fr.veloadmin.commands;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import com.velocitypowered.api.command.SimpleCommand;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.tree.LiteralCommandNode;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
+import com.velocitypowered.api.command.BrigadierCommand;
+import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import fr.veloadmin.VeloAdminPlugin;
+import fr.veloadmin.util.OpCache;
+import fr.veloadmin.util.PermissionUtil;
+import fr.veloadmin.util.SuggestionsUtil;
+import fr.veloadmin.util.VanishManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
+import java.time.Duration;
 import java.util.Optional;
 
 /**
@@ -18,30 +28,33 @@ import java.util.Optional;
  * that server to perform the actual in-world teleport once both players are
  * present.
  */
-public class TpToCommand implements SimpleCommand {
+public final class TpToCommand {
 
-    private final ProxyServer server;
-    private final VeloAdminPlugin plugin;
+    private TpToCommand() {}
 
-    public TpToCommand(ProxyServer server, VeloAdminPlugin plugin) {
-        this.server = server;
-        this.plugin = plugin;
+    public static BrigadierCommand create(ProxyServer server, VeloAdminPlugin plugin, VanishManager vanishManager, OpCache opCache) {
+        LiteralCommandNode<CommandSource> node = LiteralArgumentBuilder.<CommandSource>literal("tpto")
+                .requires(source -> PermissionUtil.has(source, "veloadmin.tpgui", opCache))
+                .then(RequiredArgumentBuilder.<CommandSource, String>argument("joueur", StringArgumentType.word())
+                        .suggests((ctx, builder) -> SuggestionsUtil.suggestPlayers(ctx, builder, server, vanishManager))
+                        .executes(ctx -> {
+                            CommandSource source = ctx.getSource();
+                            if (!(source instanceof Player executor)) {
+                                source.sendMessage(Component.text("Seuls les joueurs peuvent utiliser cette commande.", NamedTextColor.RED));
+                                return 0;
+                            }
+                            String targetName = StringArgumentType.getString(ctx, "joueur");
+                            teleport(server, plugin, executor, targetName);
+                            return 1;
+                        })
+                )
+                .build();
+
+        return new BrigadierCommand(node);
     }
 
-    @Override
-    public void execute(Invocation invocation) {
-        var source = invocation.source();
-        if (!(source instanceof Player executor)) {
-            source.sendMessage(Component.text("Seuls les joueurs peuvent utiliser cette commande.", NamedTextColor.RED));
-            return;
-        }
-        String[] args = invocation.arguments();
-        if (args.length < 1) {
-            executor.sendMessage(Component.text("Usage: /tpto <joueur>", NamedTextColor.RED));
-            return;
-        }
-
-        Optional<Player> targetOpt = server.getPlayer(args[0]);
+    private static void teleport(ProxyServer server, VeloAdminPlugin plugin, Player executor, String targetName) {
+        Optional<Player> targetOpt = server.getPlayer(targetName);
         if (targetOpt.isEmpty()) {
             executor.sendMessage(Component.text("Joueur introuvable ou hors ligne.", NamedTextColor.RED));
             return;
@@ -72,9 +85,8 @@ public class TpToCommand implements SimpleCommand {
 
         executor.createConnectionRequest(targetServer).connect().thenAccept(result -> {
             if (result.isSuccessful()) {
-                // Give the backend a moment to fully spawn the player before teleporting.
                 server.getScheduler().buildTask(plugin, () -> sendTeleportRequest(executor, target, targetServer))
-                        .delay(java.time.Duration.ofMillis(500))
+                        .delay(Duration.ofMillis(500))
                         .schedule();
                 executor.sendMessage(Component.text("Connexion à " + targetServer.getServerInfo().getName()
                         + " puis téléportation vers " + target.getUsername() + "...", NamedTextColor.GREEN));
@@ -85,16 +97,11 @@ public class TpToCommand implements SimpleCommand {
         });
     }
 
-    private void sendTeleportRequest(Player executor, Player target, RegisteredServer targetServer) {
+    private static void sendTeleportRequest(Player executor, Player target, RegisteredServer targetServer) {
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("TP");
         out.writeUTF(executor.getUniqueId().toString());
         out.writeUTF(target.getUniqueId().toString());
         targetServer.sendPluginMessage(VeloAdminPlugin.CHANNEL, out.toByteArray());
-    }
-
-    @Override
-    public boolean hasPermission(Invocation invocation) {
-        return invocation.source().hasPermission("veloadmin.tpgui");
     }
 }

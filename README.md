@@ -1,150 +1,82 @@
-# 🛡️ VeloAdmin — Outils d'administration pour réseau Velocity
+# 🛡️ VeloAdmin
 
-**VeloAdmin** est une suite d'outils d'administration pensée pour les réseaux
-Minecraft propulsés par **Velocity 4.x** (proxy) avec des serveurs **Paper 1.21.x**
-en backend. Elle regroupe en un seul plugin les fonctionnalités essentielles de
-modération : téléportation entre serveurs, invisibilité (vanish), signalements
-joueurs et bannissements temporaires — le tout centralisé au niveau du proxy.
+**VeloAdmin** est une suite d'outils d'administration pour les réseaux Minecraft propulsés par **Velocity** : téléportation entre serveurs, vanish complet, système de signalements et bannissements temporaires — le tout piloté depuis le proxy et appliqué réellement sur chaque serveur Paper du réseau.
 
----
+La suite se compose de **deux plugins complémentaires** :
+
+| Plugin | Où l'installer | Rôle |
+|---|---|---|
+| **VeloAdmin** | `plugins/` du proxy **Velocity** | Commandes, base de données SQLite (reports & bans), menus cliquables dans le chat, logique réseau |
+| **VeloAdminBridge** | `plugins/` de **chaque** serveur **Paper 1.21.x** | Exécute la vraie téléportation et le vrai vanish en jeu, synchronise le statut OP |
+
+> ⚠️ **Pourquoi deux plugins ?** Velocity est un proxy : il gère le réseau mais n'a pas accès aux inventaires, aux positions ni au rendu des joueurs. Ces actions ne peuvent exister que côté serveur. Sans le bridge, `/tpgui` connecte bien au bon serveur mais ne téléporte pas sur le joueur, et `/vanish` reste un simple état logique sans invisibilité réelle.
 
 ## ✨ Fonctionnalités
 
-- 🧭 **`/tpgui`** — Un menu cliquable directement dans le chat : choisissez un
-  serveur, puis un joueur, et téléportez-vous instantanément vers lui, où qu'il
-  soit sur le réseau.
-- 👻 **`/vanish`** — Devenez invisible en un instant. Le vanish est appliqué
-  **réellement en jeu** grâce au plugin bridge installé sur chaque serveur
-  Paper, et synchronisé entre tous les serveurs du réseau.
-- 🚩 **`/report`** — Permet à n'importe quel joueur de signaler un fautif. Les
-  signalements sont stockés dans une base centralisée, consultable par
-  l'équipe via `/reports` avec des boutons cliquables pour les marquer comme
-  vérifiés.
-- 🔨 **`/tempban`** — Bannissez temporairement un joueur, sur un serveur
-  précis ou sur **l'ensemble du réseau** (`ALL`), avec des durées flexibles
-  (`1d12h`, `45m`, `3h30m`…). Déconnexion immédiate et refus de reconnexion
-  tant que le ban est actif.
-- 💾 **Base SQLite intégrée** — Aucune base externe à configurer : tout est
-  stocké dans un simple fichier créé automatiquement au premier démarrage.
+- 🧭 **`/tpgui`** — menu cliquable dans le chat : choisis un serveur, puis un joueur, et téléporte-toi sur lui **n'importe où sur le réseau**
+- 👻 **`/vanish`** — invisibilité complète :
+  - invisible physiquement en jeu (effet de potion + `hidePlayer`)
+  - retiré de la **tab-list de tout le réseau** (pas seulement de son serveur)
+  - masqué du `/list` (commande réécrite par le bridge)
+  - aucun message de connexion/déconnexion visible en changeant de serveur
+  - retiré du **compteur et de l'échantillon de joueurs** affichés sur le ping du proxy dans la liste multijoueur
+  - les joueurs avec `veloadmin.vanish.see` (OP par défaut) continuent de tout voir
+- 🚨 **`/report <joueur> <raison>`** — signalement accessible à tous les joueurs
+- 📋 **`/reports`** — liste des signalements avec bouton cliquable `[Basculer]` pour marquer vérifié/non vérifié
+- 🔨 **`/tempban <joueur> <durée> <serveur|ALL> <raison>`** — bannissement temporaire sur un serveur précis ou sur **tout le réseau**
+- ⌨️ **Tab-completion complète** — toutes les commandes utilisent l'API **Brigadier** : arguments typés, suggestions de joueurs (les joueurs en vanish sont exclus sauf pour les admins), de serveurs et d'`ALL`
+- 🔑 **Accès automatique pour les OP** — aucun plugin de permissions requis : le bridge envoie le vrai statut OP de chaque joueur au proxy à la connexion et toutes les 10 secondes (les `/op`/`/deop` en jeu sont détectés). LuckPerms & co restent pris en compte en plus
+- 💾 **Stockage SQLite autonome** — aucune configuration, le fichier `veloadmin.db` se crée tout seul au premier démarrage
 
----
+## 🆕 Nouveautés de la version 1.3.0
 
-## 📦 Pourquoi deux JAR ?
+- **Commandes réécrites avec Brigadier** : fini le texte rouge dans le client, arguments typés et suggestions intelligentes (joueurs, serveurs, `ALL`) directement dans la barre de commande
+- **Vanish réseau complet** : le joueur vanish disparaît désormais de la tab-list de **tous les serveurs**, du `/list`, et même du **ping du proxy** dans la liste des serveurs multijoueur
+- **Synchronisation automatique des OP** : les opérateurs obtiennent toutes les permissions admin sans rien configurer, avec détection en direct des `/op` et `/deop`
+- **Respect du vanish dans les suggestions** : les joueurs invisibles n'apparaissent plus dans la tab-completion pour les non-admins
+- **Bridge enrichi** : nouvelle commande `/list` filtrée côté Paper et synchronisation OP en continu
 
-Velocity est un **proxy** : il gère les connexions réseau, mais n'a pas accès
-au monde de jeu (inventaires, positions, invisibilité). VeloAdmin se compose
-donc de deux plugins complémentaires :
+## 📦 Installation
 
-| JAR | Où l'installer ? | Rôle |
-|---|---|---|
-| **VeloAdmin.jar** | `plugins/` du proxy **Velocity** | Commandes, base de données, logique réseau, menus cliquables |
-| **VeloAdminBridge.jar** | `plugins/` de **chaque** serveur Paper | Exécute la vraie téléportation et le vrai vanish en jeu, à la demande du proxy |
-
-> ⚠️ Sans le bridge sur un serveur, `/tpgui` connectera bien le joueur au bon
-> serveur mais sans téléportation précise, et `/vanish` restera un simple état
-> logique sans invisibilité réelle.
-
----
-
-## 🚀 Installation
-
-1. Téléchargez les deux JAR depuis la page
-   [Releases](https://github.com/herocraftlol/Admintools/releases).
-2. Déposez `VeloAdmin.jar` dans le dossier `plugins/` de votre proxy Velocity.
-3. Déposez `VeloAdminBridge.jar` dans le dossier `plugins/` de **chaque**
-   serveur Paper 1.21.x du réseau.
-4. Redémarrez le proxy et les serveurs. C'est prêt ! ✅
-
----
+1. Télécharge les deux `.jar` depuis la [dernière release](../../releases/latest)
+2. Place **`VeloAdmin.jar`** dans `plugins/` du proxy Velocity
+3. Place **`VeloAdminBridge.jar`** dans `plugins/` de **chaque** serveur Paper 1.21.x
+4. Redémarre le proxy et tous les serveurs
 
 ## 🎮 Commandes
 
 | Commande | Permission | Description |
 |---|---|---|
-| `/tpgui` | `veloadmin.tpgui` | Menu cliquable : choisissez un serveur puis un joueur pour vous téléporter vers lui, sur n'importe quel serveur du réseau |
-| `/tpto <serveur> <joueur>` | `veloadmin.tpgui` | Téléportation directe, sans passer par le menu |
-| `/vanish` | `veloadmin.vanish` | Active/désactive votre invisibilité (appliquée réellement par le bridge côté serveur) |
-| `/report <joueur> <raison>` | `veloadmin.report` (activé pour tous par défaut) | Signale un joueur à l'équipe de modération |
-| `/reports` ou `/reports all` | `veloadmin.admin.reports` | Liste les signalements (non vérifiés, ou tous) avec un bouton cliquable pour basculer vérifié/non vérifié |
-| `/tempban <joueur> <durée> <serveur\|ALL> <raison>` | `veloadmin.admin.ban` | Bannit temporairement un joueur, sur un serveur précis ou sur tout le réseau |
+| `/tpgui` | `veloadmin.tpgui` | Menu cliquable de téléportation inter-serveurs |
+| `/vanish` | `veloadmin.vanish` | Active/désactive ton invisibilité |
+| `/report <joueur> <raison>` | `veloadmin.report` (tout le monde par défaut) | Signale un joueur |
+| `/reports` ou `/reports all` | `veloadmin.admin.reports` | Liste les signalements (non vérifiés ou tous) |
+| `/tempban <joueur> <durée> <serveur\|ALL> <raison>` | `veloadmin.admin.ban` | Bannit temporairement, serveur précis ou réseau entier |
 
-### ⏱️ Format des durées
+**Format de durée** : combinaison de `w` (semaines), `d` (jours), `h` (heures), `m` (minutes), `s` (secondes) — ex : `1d12h`, `45m`, `3h30m`.
 
-Combinaison libre de `w` (semaines), `d` (jours), `h` (heures), `m` (minutes),
-`s` (secondes) — par exemple : `1d12h`, `45m`, `3h30m`.
-
-### 💡 Exemples
-
+Exemples :
 ```
 /tempban Steve 1d ALL Insultes répétées
 /tempban Steve 2h survie AFK farming interdit
 /reports
-/reports all
 /tpgui
 ```
 
----
+## 🔐 Permissions
 
-## 🔑 Permissions
+| Permission | Défaut | Description |
+|---|---|---|
+| `veloadmin.tpgui` | OP | Accès au menu de téléportation |
+| `veloadmin.vanish` | OP | Accès au vanish |
+| `veloadmin.vanish.see` | OP | Voir les joueurs en vanish (jeu + menus) |
+| `veloadmin.report` | tous | Pouvoir signaler un joueur |
+| `veloadmin.admin.reports` | OP | Gérer les signalements |
+| `veloadmin.admin.ban` | OP | Utiliser `/tempban` |
 
-| Permission | Effet |
-|---|---|
-| `veloadmin.tpgui` | Accès à `/tpgui` et `/tpto` |
-| `veloadmin.vanish` | Accès à `/vanish` |
-| `veloadmin.vanish.see` | Voir les joueurs invisibles, dans `/tpgui` **et** en jeu (à donner aux admins/modos, sur le proxy **et** sur Paper) |
-| `veloadmin.report` | Accès à `/report` (activée par défaut pour tous les joueurs) |
-| `veloadmin.admin.reports` | Accès à `/reports` |
-| `veloadmin.admin.ban` | Accès à `/tempban` |
+## 🛠️ Compiler depuis les sources
 
----
-
-## 💾 Stockage
-
-Une base **SQLite** (`plugins/veloadmin/veloadmin.db` côté proxy) contient
-deux tables : `reports` et `bans`. Aucune dépendance externe à installer : le
-fichier se crée tout seul au premier démarrage et le driver SQLite est
-directement embarqué dans le JAR.
-
----
-
-## 🆕 Nouveautés
-
-### v1.2.0 — Build corrigé & artefacts publiés 📦
-
-- 🔧 **Chaîne de compilation corrigée** : le processeur d'annotations
-  Velocity 4.x génère désormais correctement le `velocity-plugin.json`
-  embarqué dans le JAR — indispensable pour que le proxy reconnaisse et
-  charge le plugin au démarrage.
-- 🔢 **Numéro de version harmonisé** (`1.2.0`) partout : `pom.xml`
-  (parent + modules), `plugin.yml` du bridge et annotation `@Plugin`.
-- 📦 **JAR prêts à l'emploi** : `VeloAdmin.jar` et `VeloAdminBridge.jar`
-  sont compilés et publiés directement dans la release, avec le driver
-  SQLite déjà intégré — aucune compilation requise de votre côté.
-
-### v1.1.0 — Compatibilité Velocity 4.x ⬆️
-
-- ⬆️ Migration de l'API Velocity **3.3.0 → 4.1.0-SNAPSHOT** : le plugin est
-  désormais compatible avec les proxies **Velocity 4.0.x** et plus récents.
-- 🔧 Correction du build : ajout du dépôt de snapshots PaperMC et déclaration
-  explicite du processeur d'annotations Velocity 4.x (séparé depuis JDK 23+).
-- 🛠️ Le build nécessite désormais **JDK 25** pour compiler (le bytecode du
-  plugin reste compatible Java 17).
-
-### v1.0.0 — Première version publique 🎉
-
-- 🧭 Menu de téléportation inter-serveurs `/tpgui` (et `/tpto` en direct)
-- 👻 Vanish réseau `/vanish`, appliqué réellement en jeu via le bridge Paper
-- 🚩 Système de signalements `/report` + gestion `/reports` avec boutons cliquables
-- 🔨 Bannissements temporaires `/tempban`, ciblés par serveur ou globaux (`ALL`)
-- 💾 Stockage SQLite embarqué, zéro configuration
-- 🔗 Plugin bridge VeloAdminBridge pour la synchronisation proxy ↔ serveurs
-
----
-
-## 🔧 Compiler depuis les sources
-
-Prérequis : **JDK 25** (requis par le processeur d'annotations Velocity 4.x)
-et **Maven**.
+Prérequis : **JDK 17+** et **Maven**.
 
 ```bash
 git clone https://github.com/herocraftlol/Admintools.git
@@ -152,18 +84,17 @@ cd Admintools
 mvn clean package
 ```
 
-Vous obtenez :
-
+Tu récupères :
 - `veloadmin/target/VeloAdmin.jar` → proxy Velocity
-- `veloadminbridge/target/VeloAdminBridge.jar` → serveurs Paper
+- `veloadminbridge/target/VeloAdminBridge.jar` → chaque serveur Paper
+
+## ⚠️ Limites connues
+
+- Le menu `/tpgui` reste un menu **dans le chat** (cliquable), pas une GUI en coffre — c'est une contrainte du proxy
+- Les logs **console** du serveur peuvent encore afficher la connexion d'un joueur vanish (log serveur, pas message de jeu)
+- Un plugin tiers lisant `Bukkit.getOnlinePlayers()` directement verra toujours les joueurs vanish (seul `/list` est réécrit)
+- La résolution UUID des joueurs **hors ligne** utilise le mode offline classique ; en réseau `online-mode`, adapter si besoin
 
 ---
 
-## 🗺️ Limites connues & pistes d'amélioration
-
-- Le menu est en **chat cliquable** (Adventure), pas une vraie GUI en coffre :
-  une vraie interface d'inventaire nécessiterait d'étendre le bridge.
-- Le vanish masque les joueurs en jeu (`hidePlayer`/`showPlayer`) mais ne
-  cache pas encore la tab-list du proxy ni les messages de connexion.
-- Pour bannir un joueur **hors ligne**, l'UUID calculé est celui du mode
-  offline ; en mode online, une résolution via l'API Mojang serait à envisager.
+Développé par **herocraftlol** — licence libre, contributions bienvenues 🎉

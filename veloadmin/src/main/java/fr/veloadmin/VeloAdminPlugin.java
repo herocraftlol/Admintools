@@ -15,7 +15,9 @@ import fr.veloadmin.commands.TpGuiCommand;
 import fr.veloadmin.commands.TpToCommand;
 import fr.veloadmin.commands.VanishCommand;
 import fr.veloadmin.listeners.ConnectionListener;
+import fr.veloadmin.listeners.ProxyPingListener;
 import fr.veloadmin.storage.Database;
+import fr.veloadmin.util.OpCache;
 import fr.veloadmin.util.VanishManager;
 import org.slf4j.Logger;
 
@@ -24,7 +26,7 @@ import java.nio.file.Path;
 @Plugin(
         id = "veloadmin",
         name = "VeloAdmin",
-        version = "1.2.0",
+        version = "1.3.0",
         description = "GUI teleport, vanish, /report et /tempban multi-serveurs",
         authors = {"herocraftlol"}
 )
@@ -39,6 +41,7 @@ public class VeloAdminPlugin {
 
     private Database database;
     private VanishManager vanishManager;
+    private OpCache opCache;
 
     @Inject
     public VeloAdminPlugin(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
@@ -53,23 +56,23 @@ public class VeloAdminPlugin {
         this.database.init();
 
         this.vanishManager = new VanishManager();
+        this.opCache = new OpCache();
 
         // Plugin messaging channel used to talk to the backend "bridge" plugin
         server.getChannelRegistrar().register(CHANNEL);
 
-        // Commands
+        // Commands (Brigadier-based: proper argument types + tab-completion, no more red highlighting)
         var commandManager = server.getCommandManager();
-        commandManager.register("report", new ReportCommand(database));
-        commandManager.register(
-                commandManager.metaBuilder("reports").aliases("reportsadmin").build(),
-                new ReportsAdminCommand(database));
-        commandManager.register("tpgui", new TpGuiCommand(server, vanishManager));
-        commandManager.register("tpto", new TpToCommand(server, this));
-        commandManager.register("vanish", new VanishCommand(server, vanishManager, this));
-        commandManager.register("tempban", new TempBanCommand(database, server));
+        commandManager.register(ReportCommand.create(database, server, vanishManager));
+        commandManager.register(ReportsAdminCommand.create(database, opCache));
+        commandManager.register(TpGuiCommand.create(server, vanishManager, opCache));
+        commandManager.register(TpToCommand.create(server, this, vanishManager, opCache));
+        commandManager.register(VanishCommand.create(server, vanishManager, opCache, this));
+        commandManager.register(TempBanCommand.create(database, server, vanishManager, opCache));
 
         // Listeners
-        server.getEventManager().register(this, new ConnectionListener(database, vanishManager, this));
+        server.getEventManager().register(this, new ConnectionListener(database, vanishManager, opCache, server, this));
+        server.getEventManager().register(this, new ProxyPingListener(server, vanishManager));
 
         logger.info("VeloAdmin chargé. N'oublie pas d'installer VeloAdminBridge sur chaque serveur backend !");
     }
@@ -93,5 +96,9 @@ public class VeloAdminPlugin {
 
     public VanishManager getVanishManager() {
         return vanishManager;
+    }
+
+    public OpCache getOpCache() {
+        return opCache;
     }
 }

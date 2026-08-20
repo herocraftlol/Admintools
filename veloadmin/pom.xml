@@ -7,7 +7,7 @@
     <parent>
         <groupId>fr.veloadmin</groupId>
         <artifactId>veloadmin-parent</artifactId>
-        <version>1.2.0</version>
+        <version>1.3.0</version>
     </parent>
 
     <artifactId>veloadmin</artifactId>
@@ -18,25 +18,23 @@
             <id>papermc</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
-        <!-- Les snapshots Velocity 4.x ne sont publies que dans ce depot -->
-        <repository>
-            <id>papermc-snapshots</id>
-            <url>https://repo.papermc.io/repository/maven-snapshots/</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
     </repositories>
 
     <dependencies>
-        <!-- Velocity API - version 4.x, compatible avec un proxy Velocity 4.0.x -->
+        <!-- Velocity API - supports 1.21.x -->
         <dependency>
             <groupId>com.velocitypowered</groupId>
             <artifactId>velocity-api</artifactId>
-            <version>4.1.0-SNAPSHOT</version>
+            <version>3.3.0-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Brigadier: used directly for typed command arguments + tab-completion suggestions.
+             Already pulled in transitively by velocity-api, declared explicitly here for clarity. -->
+        <dependency>
+            <groupId>com.mojang</groupId>
+            <artifactId>brigadier</artifactId>
+            <version>1.0.18</version>
             <scope>provided</scope>
         </dependency>
 
@@ -60,7 +58,7 @@
                         <path>
                             <groupId>com.velocitypowered</groupId>
                             <artifactId>velocity-api</artifactId>
-                            <version>4.1.0-SNAPSHOT</version>
+                            <version>3.3.0-SNAPSHOT</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

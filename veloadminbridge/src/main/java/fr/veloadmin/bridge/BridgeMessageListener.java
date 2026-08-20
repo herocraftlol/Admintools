@@ -2,6 +2,8 @@ package fr.veloadmin.bridge;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.plugin.messaging.PluginMessageListener;
 
 import java.io.ByteArrayInputStream;
@@ -60,6 +62,15 @@ public class BridgeMessageListener implements PluginMessageListener {
 
         Player target = Bukkit.getPlayer(targetId);
         if (target == null) return;
+
+        // Physical invisibility, on top of hidePlayer (belt and suspenders: hidePlayer stops
+        // interaction/collision/rendering, the potion effect covers edge cases like armor stands
+        // shooting at the player, mob targeting, or plugins that bypass the visibility API).
+        if (nowVanished) {
+            target.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, PotionEffect.INFINITE_DURATION, 0, false, false, false));
+        } else {
+            target.removePotionEffect(PotionEffectType.INVISIBILITY);
+        }
 
         for (Player online : Bukkit.getOnlinePlayers()) {
             if (online.equals(target)) continue;
